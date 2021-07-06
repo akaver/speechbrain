@@ -453,6 +453,7 @@ class CategoricalEncoder:
                     "disallowed the use of the existing unk-label"
                 )
             elif not hasattr(self, "unk_label") and allow_unk:
+                print(self.lab2ind)
                 raise KeyError(
                     f"Cannot encode unknown label {label}. "
                     "You have not called add_unk() to add a special "

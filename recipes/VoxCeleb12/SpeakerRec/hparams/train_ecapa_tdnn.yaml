@@ -30,8 +30,10 @@ skip_prep: True
 ckpt_interval_minutes: 15 # save checkpoint every N min
 
 # Training parameters
-number_of_epochs: 10
-batch_size: 32
+number_of_epochs: 50
+# 32
+# 8 for 8gb RTX2080
+batch_size: 4
 lr: 0.001
 base_lr: 0.00000001
 max_lr: !ref <lr>
@@ -48,7 +50,7 @@ right_frames: 0
 deltas: False
 
 # Number of speakers
-out_n_neurons: 7323 #1211 for vox1  # 5994 for vox2, 7205 for vox1+vox2
+out_n_neurons: 10 #7323 #1211 for vox1  # 5994 for vox2, 7205 for vox1+vox2
 
 dataloader_options:
     batch_size: !ref <batch_size>

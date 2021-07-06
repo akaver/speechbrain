@@ -12,6 +12,7 @@ import random
 import shutil
 import sys  # noqa F401
 import numpy as np
+from sklearn.model_selection import train_test_split
 import torch
 import torchaudio
 from tqdm.contrib import tqdm
@@ -189,9 +190,6 @@ def _get_utterance_split_lists(
         logger.info(f"Loading file list from {save_file_info}")
         file_list = load_pkl(save_file_info)
 
-    if DEBUG:
-        file_list = random.sample(file_list, 500)
-
     logger.info(f"Total {len(file_list)} wav audio files")
 
     audio_files_dict = {}
@@ -201,15 +199,30 @@ def _get_utterance_split_lists(
             audio_files_dict.setdefault(spk_id, []).append(f)
 
     spk_id_list = list(audio_files_dict.keys())
+    random.shuffle(spk_id_list)
+
+    if DEBUG:
+        num_speakers_for_debug = 10
+        logger.warning(f"Debug mode, using only {num_speakers_for_debug} speakers")
+        spk_id_list = random.sample(spk_id_list, num_speakers_for_debug)
+
     logger.info(f"Unique speakers found (excluding test speakers) {len(spk_id_list)}")
 
-    random.shuffle(spk_id_list)
+    full_lst = []
+    for spk_id in spk_id_list:
+        full_lst.extend(audio_files_dict[spk_id])
+    logger.info(f"Audio samples {len(full_lst)}")
+
+    test_size_split = 1 - 0.01 * split_ratio[0]
+    train_lst, dev_lst = train_test_split(full_lst, test_size=test_size_split, shuffle=True)
+    """
     split = int(0.01 * split_ratio[0] * len(spk_id_list))
     for spk_id in spk_id_list[:split]:
         train_lst.extend(audio_files_dict[spk_id])
 
     for spk_id in spk_id_list[split:]:
         dev_lst.extend(audio_files_dict[spk_id])
+    """
 
     logger.info(f"Train list {len(train_lst)}, dev list {len(dev_lst)}")
 
