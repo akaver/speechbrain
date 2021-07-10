@@ -34,7 +34,7 @@ TEST_CSV = "test.csv"
 SAMPLERATE = 16000
 
 # Set to false in production. This limits dataset size to 500 to test the preprocessing pipeline
-DEBUG = True
+DEBUG = False
 
 if DEBUG:
     logger.warning(f"DEBUG mode!")
@@ -462,8 +462,8 @@ def main():
     split_ratio = [90, 10]
 
     # test audio files are excluded from the train/dev data
-    test_pairs_file = '/data/voxceleb1/veri_test2.txt'
-    # test_pairs_file = '/data/voxceleb1/list_test_all2.txt'
+    # test_pairs_file = '/data/voxceleb1/veri_test2.txt'
+    test_pairs_file = '/data/voxceleb1/list_test_all2.txt'
     # test_pairs_file = '/data/voxceleb1/list_test_hard2.txt'
 
     prepare_voxceleb(data_folder_voxceleb1, data_folder_voxceleb2, save_folder, test_pairs_file=test_pairs_file,
