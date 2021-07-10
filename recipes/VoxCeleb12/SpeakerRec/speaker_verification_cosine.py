@@ -237,19 +237,6 @@ if __name__ == "__main__":
         overrides=overrides,
     )
 
-    # Prepare data from dev of Voxceleb1
-    prepare_voxceleb(
-        data_folder=params["data_folder"],
-        save_folder=params["save_folder"],
-        verification_pairs_file=veri_file_path,
-        splits=["train", "dev", "test"],
-        split_ratio=[90, 10],
-        seg_dur=3.0,
-        source=params["voxceleb_source"]
-        if "voxceleb_source" in params
-        else None,
-    )
-
     # here we create the datasets objects as well as tokenization and encoding
     train_dataloader, enrol_dataloader, test_dataloader = dataio_prep(params)
 

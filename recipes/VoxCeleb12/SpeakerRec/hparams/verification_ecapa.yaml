@@ -4,14 +4,14 @@
 #          Mirco Ravanelli 2020
 # ################################
 
-seed: 1234
+seed: 1986
 __set_seed: !apply:torch.manual_seed [!ref <seed>]
 
 # Folders and train_log file
-voxceleb_source: /network/datasets/restricted/voxceleb_users/voxceleb/voxceleb1
-data_folder: !PLACEHOLDER #e.g., /localscratch/voxceleb1
-output_folder: results/voxceleb1_2/speaker_verification_ecapa_big
-save_folder: !ref <output_folder>/save/
+voxceleb_source: /data/voxceleb1
+data_folder: /data/voxceleb1
+output_folder: /data/results/ecapa_augment
+save_folder: /data/voxdata
 device: 'cuda:0'
 
 # Use the following links for the official voxceleb splits:
@@ -26,14 +26,14 @@ verification_file: https://www.robots.ox.ac.uk/~vgg/data/voxceleb/meta/veri_test
 # is downloaded from the speechbrain HuggingFace repository.
 # However, a local path pointing to a directory containing your checkpoints may also be specified
 # instead (see pretrainer below)
-pretrain_path: speechbrain/spkrec-ecapa-voxceleb
+pretrain_path: /data/voxdata/CKPT+2021-07-10+17-56-18+00
 
 # csv files
 train_data: !ref <save_folder>/train.csv
 enrol_data: !ref <save_folder>/enrol.csv
 test_data: !ref <save_folder>/test.csv
 
-batch_size: 8
+batch_size: 32
 score_norm: 's-norm' # z-norm t-norm s-norm none
 cohort_size: 20000 # amount of imposter utterances in normalization cohort
 n_train_snts: 400000 # used for normalization stats
