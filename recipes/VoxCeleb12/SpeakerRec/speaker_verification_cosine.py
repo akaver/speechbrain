@@ -22,6 +22,10 @@ from hyperpyyaml import load_hyperpyyaml
 from speechbrain.utils.metric_stats import EER, minDCF
 from speechbrain.utils.data_utils import download_file
 from speechbrain.utils.distributed import run_on_main
+from speechbrain.dataio.dataio import (
+    load_pkl,
+    save_pkl,
+)
 
 
 # Compute embeddings from the waveforms
@@ -250,16 +254,41 @@ if __name__ == "__main__":
     # Computing  enrollment and test embeddings
     logger.info("Computing enroll/test embeddings...")
 
-    # First run
-    enrol_dict = compute_embedding_loop(enrol_dataloader)
-    test_dict = compute_embedding_loop(test_dataloader)
+    save_enrol_dict = params["save_folder"] + "/enrol_dict.pkl"
+    save_test_dict = params["save_folder"] + "/test_dict.pkl"
+    save_train_dict = params["save_folder"] + "/train_dict.pkl"
+    enrol_dict = {}
+    test_dict = {}
+    train_dict = {}
 
-    # Second run (normalization stats are more stable)
-    enrol_dict = compute_embedding_loop(enrol_dataloader)
-    test_dict = compute_embedding_loop(test_dataloader)
+    if not os.path.exists(save_enrol_dict) or not os.path.exists(save_enrol_dict):
+        # First run
+        enrol_dict = compute_embedding_loop(enrol_dataloader)
+        test_dict = compute_embedding_loop(test_dataloader)
+
+        # Second run (normalization stats are more stable)
+        enrol_dict = compute_embedding_loop(enrol_dataloader)
+        test_dict = compute_embedding_loop(test_dataloader)
+
+        logger.info("Saving enrol_dict")
+        save_pkl(enrol_dict, save_enrol_dict)
+        logger.info("Saving test_dict")
+        save_pkl(test_dict, save_test_dict)
+
+    else:
+        logger.info("Loading enrol_dict")
+        enrol_dict = load_pkl(save_enrol_dict)
+        logger.info("Loading test_dict")
+        test_dict = load_pkl(save_test_dict)
 
     if "score_norm" in params:
-        train_dict = compute_embedding_loop(train_dataloader)
+        if not os.path.exists(save_train_dict):
+            train_dict = compute_embedding_loop(train_dataloader)
+            logger.info("Saving train_dict")
+            save_pkl(train_dict, save_train_dict)
+        else:
+            logger.info("Loading train_dict")
+            train_dict = load_pkl(save_train_dict)
 
     # Compute the EER
     logger.info("Computing EER..")
