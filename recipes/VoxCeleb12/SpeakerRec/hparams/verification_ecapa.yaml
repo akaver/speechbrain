@@ -20,7 +20,7 @@ device: 'cuda:0'
 # VoxCeleb1-E (cleaned): https://www.robots.ox.ac.uk/~vgg/data/voxceleb/meta/list_test_all2.txt.
 # VoxCeleb1-E and VoxCeleb1-H lists are drawn from the VoxCeleb1 training set.
 # Therefore you cannot use any files in VoxCeleb1 for training if you are using these lists for testing.
-verification_file: https://www.robots.ox.ac.uk/~vgg/data/voxceleb/meta/veri_test2.txt
+verification_file: /data/voxceleb1/veri_test2.txt
 
 # Here, the pretrained embedding model trained with train_speaker_embeddings.py hparams/train_ecapa_tdnn.yaml
 # is downloaded from the speechbrain HuggingFace repository.
@@ -33,7 +33,7 @@ train_data: !ref <save_folder>/train.csv
 enrol_data: !ref <save_folder>/enrol.csv
 test_data: !ref <save_folder>/test.csv
 
-batch_size: 32
+batch_size: 16
 score_norm: 's-norm' # z-norm t-norm s-norm none
 cohort_size: 20000 # amount of imposter utterances in normalization cohort
 n_train_snts: 400000 # used for normalization stats
