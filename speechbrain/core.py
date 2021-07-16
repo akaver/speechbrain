@@ -156,12 +156,23 @@ def parse_arguments(arg_list):
     parser = argparse.ArgumentParser(
         description="Run a SpeechBrain experiment",
     )
+    """
     parser.add_argument(
         "param_file",
         type=str,
         help="A yaml-formatted file using the extended YAML syntax. "
         "defined by SpeechBrain.",
     )
+    """
+    parser.add_argument(
+        "param_file",
+        type=str,
+        action='append',
+        nargs='+',
+        help="A yaml-formatted file using the extended YAML syntax. "
+        "defined by SpeechBrain. Multiple files loaded in order",
+    )
+
     parser.add_argument(
         "--debug",
         default=False,

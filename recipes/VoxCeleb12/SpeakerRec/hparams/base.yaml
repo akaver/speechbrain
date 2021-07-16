@@ -1,0 +1,5 @@
+voxceleb_source: /data/voxceleb1
+data_folder: /data/voxceleb1
+output_folder: /data/results/ecapa_augment
+save_folder: /data/voxdata
+device: 'cuda:0'
