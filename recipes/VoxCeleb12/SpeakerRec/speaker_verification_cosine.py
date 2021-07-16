@@ -94,11 +94,13 @@ def get_verification_scores(veri_test):
         train_cohort = torch.stack(list(train_dict.values()))
 
     for i, line in enumerate(veri_test):
-
         # Reading verification file (enrol_file test_file label)
         lab_pair = int(line.split(" ")[0].rstrip().split(".")[0].strip())
         enrol_id = line.split(" ")[1].rstrip().split(".")[0].strip()
         test_id = line.split(" ")[2].rstrip().split(".")[0].strip()
+
+        logger.info(f"lab_pair {str(lab_pair)} enrol {enrol_id} - test {test_id}")
+
         enrol = enrol_dict[enrol_id]
         test = test_dict[test_id]
 
