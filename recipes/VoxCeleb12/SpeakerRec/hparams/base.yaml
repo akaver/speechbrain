@@ -1,5 +1,45 @@
-voxceleb_source: /data/voxceleb1
-data_folder: /data/voxceleb1
-output_folder: /data/results/ecapa_augment
-save_folder: /data/voxdata
-device: 'cuda:0'
+# Basic parameters
+seed: 1986
+__set_seed: !apply:torch.manual_seed [!ref <seed>]
+
+output_folder: !ref /data/results/ecapa_tdnn/<seed>
+
+# generated data splits, checkpoints, etc
+data_folder: /data/voxdata
+
+# Folders for VoxCeleb1 and VoxCeleb2. Data needs to be pre-downloaded and converted into wav
+data_folder_voxceleb1: /data/voxceleb1
+data_folder_voxceleb2: /data/voxceleb2
+
+# Use the following links for the official voxceleb splits:
+# VoxCeleb1 (cleaned): https://www.robots.ox.ac.uk/~vgg/data/voxceleb/meta/veri_test2.txt
+# VoxCeleb1-H (cleaned): https://www.robots.ox.ac.uk/~vgg/data/voxceleb/meta/list_test_hard2.txt
+# VoxCeleb1-E (cleaned): https://www.robots.ox.ac.uk/~vgg/data/voxceleb/meta/list_test_all2.txt.
+# VoxCeleb1-E and VoxCeleb1-H lists are drawn from the VoxCeleb1 training set.
+# Therefore you cannot use any files in VoxCeleb1 for training if you are using these lists for testing.
+# voxceleb_prepare takes care of this automatically.
+
+verification_input_file: /data/voxceleb1/list_test_all2.txt
+# random verification pairs to use from input file. remove/set to None for full
+verification_quantity: 1000
+verification_file: !ref <data_folder>/test.txt
+
+
+# Data files - no speakers from verification files will be included
+# data is gathered by scanning voxceleb 1 and 2 directories
+
+# random unique speakers to select from whole dataset
+speaker_quantity: 10
+
+train_data: !ref <data_folder>/train.csv
+valid_data: !ref <data_folder>/valid.csv
+# how should data be split between train/valid
+split_ratio: 90
+
+
+# Data files for verification after training. Speakers here will not be included in train/valid split
+# enrol and test utterances data is created based on verification_file
+enrol_data: !ref <data_folder>/enrol.csv
+test_data: !ref <data_folder>/test.csv
+
+

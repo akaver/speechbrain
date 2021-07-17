@@ -135,7 +135,7 @@ def parse_arguments(arg_list):
 
     Returns
     -------
-    param_file : str
+    param_file : str or [[str, str, ...]]
         The location of the parameters file.
     run_opts : dict
         Run options, such as distributed, device, etc.
@@ -156,21 +156,12 @@ def parse_arguments(arg_list):
     parser = argparse.ArgumentParser(
         description="Run a SpeechBrain experiment",
     )
-    """
+
     parser.add_argument(
         "param_file",
         type=str,
         help="A yaml-formatted file using the extended YAML syntax. "
-        "defined by SpeechBrain.",
-    )
-    """
-    parser.add_argument(
-        "param_file",
-        type=str,
-        action='append',
-        nargs='+',
-        help="A yaml-formatted file using the extended YAML syntax. "
-        "defined by SpeechBrain. Multiple files loaded in order",
+             "defined by SpeechBrain.",
     )
 
     parser.add_argument(
@@ -268,6 +259,16 @@ def parse_arguments(arg_list):
         help="Amount of time between saving intra-epoch checkpoints "
         "in minutes. If non-positive, intra-epoch checkpoints are not saved.",
     )
+
+    parser.add_argument(
+        "--yaml",
+        type=str,
+        action='append',
+        nargs='+',
+        help="A yaml-formatted file using the extended YAML syntax. "
+        "defined by SpeechBrain. Multiple files loaded in order on top of required yaml",
+    )
+
 
     # Accept extra args to override yaml
     run_opts, overrides = parser.parse_known_args(arg_list)

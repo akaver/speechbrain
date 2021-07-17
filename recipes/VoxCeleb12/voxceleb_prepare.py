@@ -20,24 +20,13 @@ from speechbrain.dataio.dataio import (
     load_pkl,
     save_pkl,
 )
+import speechbrain as sb
+from hyperpyyaml import load_hyperpyyaml
+
 
 logger = logging.getLogger(__name__)
 OPT_FILE = "opt_voxceleb_prepare.pkl"
-FILE_INFO = "file_info.pkl"
-
-TRAIN_CSV = "train.csv"
-DEV_CSV = "dev.csv"
-
-ENROL_CSV = "enrol.csv"
-TEST_CSV = "test.csv"
-
 SAMPLERATE = 16000
-
-# Set to false in production. This limits dataset size to 500 to test the preprocessing pipeline
-DEBUG = False
-
-if DEBUG:
-    logger.warning(f"DEBUG mode!")
 
 
 def prepare_voxceleb(
@@ -46,12 +35,19 @@ def prepare_voxceleb(
         save_folder,
         test_pairs_file=None,
         splits=["train", "dev", "test"],
-        split_ratio=[90, 10],
+        split_ratio=90,
         seg_dur=3.0,
         amp_th=5e-04,
         split_speaker=False,
         random_segment=False,
         skip_prep=False,
+        train_csv ="train.csv",
+        valid_csv ="valid.csv",
+        enrol_csv ="enrol.csv",
+        test_csv ="test.csv",
+        file_info="file_info.pkl",
+        speaker_quantity=None,
+        verification_quantity=None
 ):
     """
     Prepares the csv files for the Voxceleb1 or Voxceleb2 datasets.
@@ -111,30 +107,29 @@ def prepare_voxceleb(
 
     # Setting ouput files
     save_opt = os.path.join(save_folder, OPT_FILE)
-    save_csv_train = os.path.join(save_folder, TRAIN_CSV)
-    save_csv_dev = os.path.join(save_folder, DEV_CSV)
-    save_file_info = os.path.join(save_folder, FILE_INFO)
+    save_file_info = os.path.join(save_folder, file_info)
 
     logger.info("Creating csv file for the VoxCeleb Dataset..")
 
     # Split data into train and validation (verification split)
     wav_lst_train, wav_lst_dev = _get_utterance_split_lists(
-        data_folder_voxceleb1, data_folder_voxceleb2, save_file_info, split_ratio, test_pairs_file
+        data_folder_voxceleb1, data_folder_voxceleb2, save_file_info, split_ratio, test_pairs_file,
+        speaker_quantity=speaker_quantity
     )
 
     # Creating csv file for training data
     if "train" in splits:
         prepare_csv(
-            seg_dur, wav_lst_train, save_csv_train, random_segment, amp_th
+            seg_dur, wav_lst_train, train_csv, random_segment, amp_th
         )
 
     if "dev" in splits:
-        prepare_csv(seg_dur, wav_lst_dev, save_csv_dev, random_segment, amp_th)
+        prepare_csv(seg_dur, wav_lst_dev, valid_csv, random_segment, amp_th)
 
-    # For PLDA verification
     if "test" in splits:
         prepare_csv_enrol_test(
-            data_folder_voxceleb1, data_folder_voxceleb2, save_folder, test_pairs_file
+            data_folder_voxceleb1, data_folder_voxceleb2, save_folder, test_pairs_file, enrol_csv, test_csv,
+            verification_quantity=verification_quantity
         )
 
     # Saving options (useful to skip this phase when already done)
@@ -145,7 +140,7 @@ def prepare_voxceleb(
 
 # Used for verification split
 def _get_utterance_split_lists(
-        data_folder_voxceleb1, data_folder_voxceleb2, save_file_info, split_ratio, test_pairs_file
+        data_folder_voxceleb1, data_folder_voxceleb2, save_file_info, split_ratio, test_pairs_file, speaker_quantity=None
 ):
     """
     Tot. number of speakers vox1= 1211.
@@ -157,8 +152,8 @@ def _get_utterance_split_lists(
     dev_lst = []
 
     data_folders = [
-        data_folder_voxceleb1 + 'dev/', data_folder_voxceleb1 + 'test/',
-        data_folder_voxceleb2 + 'dev/', data_folder_voxceleb2 + 'test/'
+        data_folder_voxceleb1 + '/dev/', data_folder_voxceleb1 + '/test/',
+        data_folder_voxceleb2 + '/dev/', data_folder_voxceleb2 + '/test/'
     ]
 
     test_speakers = []
@@ -201,10 +196,9 @@ def _get_utterance_split_lists(
     spk_id_list = list(audio_files_dict.keys())
     random.shuffle(spk_id_list)
 
-    if DEBUG:
-        num_speakers_for_debug = 10
-        logger.warning(f"Debug mode, using only {num_speakers_for_debug} speakers")
-        spk_id_list = random.sample(spk_id_list, num_speakers_for_debug)
+    if speaker_quantity is not None:
+        logger.warning(f"Using only {speaker_quantity} speakers out of {len(spk_id_list)}")
+        spk_id_list = random.sample(spk_id_list, speaker_quantity)
 
     logger.info(f"Unique speakers found (excluding test speakers) {len(spk_id_list)}")
 
@@ -213,7 +207,7 @@ def _get_utterance_split_lists(
         full_lst.extend(audio_files_dict[spk_id])
     logger.info(f"Audio samples {len(full_lst)}")
 
-    test_size_split = 1 - 0.01 * split_ratio[0]
+    test_size_split = 1 - 0.01 * split_ratio
     train_lst, dev_lst = train_test_split(full_lst, test_size=test_size_split, shuffle=True)
     """
     split = int(0.01 * split_ratio[0] * len(spk_id_list))
@@ -328,7 +322,7 @@ def prepare_csv(seg_dur, wav_lst, csv_file, random_segment=False, amp_th=0):
     _write_csv_file(csv_file, csv_output)
 
 
-def prepare_csv_enrol_test(data_folder_voxceleb1, data_folder_voxceleb2, save_folder, test_lst_file):
+def prepare_csv_enrol_test(data_folder_voxceleb1, data_folder_voxceleb2, save_folder, test_lst_file, save_enrol_csv, save_test_csv, verification_quantity=None):
     """
     Creates the csv file for test data (useful for verification)
 
@@ -348,8 +342,8 @@ def prepare_csv_enrol_test(data_folder_voxceleb1, data_folder_voxceleb2, save_fo
     # logger.debug(msg)
 
     data_folders = [
-        data_folder_voxceleb1 + 'dev/', data_folder_voxceleb1 + 'test/',
-        data_folder_voxceleb2 + 'dev/', data_folder_voxceleb2 + 'test/'
+        data_folder_voxceleb1 + '/dev/', data_folder_voxceleb1 + '/test/',
+        data_folder_voxceleb2 + '/dev/', data_folder_voxceleb2 + '/test/'
     ]
 
     csv_output_head = [
@@ -359,14 +353,20 @@ def prepare_csv_enrol_test(data_folder_voxceleb1, data_folder_voxceleb2, save_fo
     # extract all the enrol and test ids
     enrol_ids, test_ids = [], []
 
+    with open(test_lst_file) as fin:
+        lines = fin.readlines()
+        print(len(lines))
+
+    sys.exit(0)
+
     # Get unique ids (enrol and test utterances)
-    for line in open(test_lst_file):
-        e_id = line.split(" ")[1].rstrip().split(".")[0].strip()
-        t_id = line.split(" ")[2].rstrip().split(".")[0].strip()
+    for line in tqdm(open(test_lst_file)):
+        splits=line.split(" ")
+        e_id = splits[1].rstrip().split(".")[0].strip()
+        t_id = splits[2].rstrip().split(".")[0].strip()
         enrol_ids.append(e_id)
         test_ids.append(t_id)
 
-    # TODO: this is doubtful!!!! list lengths are not identical!!!
     enrol_ids = list(np.unique(np.array(enrol_ids)))
     test_ids = list(np.unique(np.array(test_ids)))
 
@@ -375,8 +375,9 @@ def prepare_csv_enrol_test(data_folder_voxceleb1, data_folder_voxceleb2, save_fo
     logger.info("preparing enrol/test csvs")
 
     for data_folder in data_folders:
+        logger.info(f"Using data from {data_folder}")
         # Prepare enrol csv
-        for id in enrol_ids:
+        for id in tqdm(enrol_ids):
             wav = data_folder + "wav/" + id + ".wav"
 
             if not os.path.exists(wav):
@@ -404,7 +405,7 @@ def prepare_csv_enrol_test(data_folder_voxceleb1, data_folder_voxceleb2, save_fo
             enrol_csv.append(csv_line)
 
         # Prepare test csv
-        for id in test_ids:
+        for id in tqdm(test_ids):
             wav = data_folder + "wav/" + id + ".wav"
 
             if not os.path.exists(wav):
@@ -430,12 +431,12 @@ def prepare_csv_enrol_test(data_folder_voxceleb1, data_folder_voxceleb2, save_fo
             test_csv.append(csv_line)
 
     csv_output = csv_output_head + enrol_csv
-    csv_file = os.path.join(save_folder, ENROL_CSV)
+    csv_file = save_enrol_csv
     # Writing the csv lines
     _write_csv_file(csv_file, csv_output)
 
     csv_output = csv_output_head + test_csv
-    csv_file = os.path.join(save_folder, TEST_CSV)
+    csv_file = save_test_csv
     # Writing the csv lines
     _write_csv_file(csv_file, csv_output)
 
@@ -453,21 +454,48 @@ def _write_csv_file(csv_file, csv_output):
 
 def main():
     logging.basicConfig(stream=sys.stderr, level=logging.INFO)
-    data_folder_voxceleb1 = '/data/voxceleb1/'
-    data_folder_voxceleb2 = '/data/voxceleb2/'
+    logging.info("Starting...")
 
-    save_folder = '/data/voxdata/'
+
+    logging.info(f"Command line args: {sys.argv[1:]}")
+
+    hparams_file, run_opts, overrides = sb.parse_arguments(sys.argv[1:])
+
+
+    # Load hyperparameters file with command-line overrides
+    hparams = {}
+    with open(hparams_file) as fin:
+        hparams_loaded = load_hyperpyyaml(fin, overrides)
+        #  merge yaml dictionaries
+        hparams.update(hparams_loaded)
+
+    # load additional yaml files on top of initial config
+    if 'yaml' in run_opts:
+        for yaml_file in run_opts['yaml'][0]:
+            logging.info(f"Loading additional yaml file: {yaml_file}")
+            with open(yaml_file) as fin:
+                hparams_loaded = load_hyperpyyaml(fin, overrides)
+                #  merge yaml dictionaries
+                hparams.update(hparams_loaded)
+
+    logging.info(f"Params: {hparams}")
+
 
     splits = ['train', 'dev', 'test']
-    split_ratio = [90, 10]
 
-    # test audio files are excluded from the train/dev data
-    # test_pairs_file = '/data/voxceleb1/veri_test2.txt'
-    test_pairs_file = '/data/voxceleb1/list_test_all2.txt'
-    # test_pairs_file = '/data/voxceleb1/list_test_hard2.txt'
+    prepare_voxceleb(
+        hparams['data_folder_voxceleb1'], hparams['data_folder_voxceleb2'],
+        hparams['data_folder'],
 
-    prepare_voxceleb(data_folder_voxceleb1, data_folder_voxceleb2, save_folder, test_pairs_file=test_pairs_file,
-                     splits=splits, split_ratio=split_ratio)
+        test_pairs_in_file=hparams['verification_file'],
+        test_pairs_out_file=hparams['verification_file'],
+
+        train_csv=hparams['train_data'], valid_csv= hparams['valid_data'],
+        enrol_csv= hparams['enrol_data'], test_csv= hparams['test_data'],
+
+        splits=splits, split_ratio=hparams['split_ratio'],
+        speaker_quantity=hparams['speaker_quantity'], verification_quantity=hparams['verification_quantity'],
+    )
 
 
 if __name__ == "__main__":

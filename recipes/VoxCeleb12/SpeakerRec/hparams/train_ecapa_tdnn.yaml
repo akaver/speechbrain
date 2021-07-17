@@ -4,16 +4,9 @@
 # ################################
 
 # Basic parameters
-seed: 1986
-__set_seed: !apply:torch.manual_seed [!ref <seed>]
-output_folder: !ref /data/results/ecapa_augment/<seed>
-save_folder: !ref /data/voxdata/
+
 train_log: !ref <output_folder>/train_log.txt
 
-# Data files
-data_folder: /data/voxdata/  # e.g. /path/to/Voxceleb
-train_annotation: !ref <save_folder>/train.csv
-valid_annotation: !ref <save_folder>/dev.csv
 
 # Folder to extract data augmentation files
 rir_folder: !ref <data_folder> # Change it if needed
