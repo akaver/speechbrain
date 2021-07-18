@@ -18,6 +18,10 @@ Author
     * Hwidong Na 2020
     * Nauman Dawalatabad 2020
 """
+
+import sys
+sys.path.insert(0, '/opt/project')
+
 import os
 import sys
 import random

@@ -11,6 +11,10 @@ Authors
     * Hwidong Na 2020
     * Mirco Ravanelli 2020
 """
+import sys
+sys.path.insert(0, '/opt/project')
+
+
 import os
 import sys
 import torch
