@@ -25,6 +25,7 @@ shuffle: True
 random_chunk: True
 
 # Number of speakers
+# should be autodetected
 out_n_neurons: 6112 #1211 for vox1  # 5994 for vox2, 7205 for vox1+vox2
 
 dataloader_options:

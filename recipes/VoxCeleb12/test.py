@@ -26,22 +26,18 @@ def main():
 
     hparams_file, run_opts, overrides = sb.parse_arguments(sys.argv[1:])
 
-
-    # Load hyperparameters file with command-line overrides
-    hparams = {}
     with open(hparams_file) as fin:
-        hparams_loaded = load_hyperpyyaml(fin, overrides)
-        #  merge yaml dictionaries
-        hparams.update(hparams_loaded)
+        hparam_str = fin.read()
 
-    # load additional yaml files on top of initial config
     if 'yaml' in run_opts:
         for yaml_file in run_opts['yaml'][0]:
             logging.info(f"Loading additional yaml file: {yaml_file}")
             with open(yaml_file) as fin:
-                hparams_loaded = load_hyperpyyaml(fin, overrides)
-                #  merge yaml dictionaries
-                hparams.update(hparams_loaded)
+                hparam_str = hparam_str + "\n" + fin.read();
+
+    print(hparam_str)
+
+    hparams = load_hyperpyyaml(hparam_str, overrides)
 
     logging.info(f"Params: {hparams}")
 

@@ -27,6 +27,7 @@ import speechbrain as sb
 from speechbrain.utils.data_utils import download_file
 from hyperpyyaml import load_hyperpyyaml
 from speechbrain.utils.distributed import run_on_main
+import logging
 
 
 class SpeakerBrain(sb.core.Brain):
@@ -195,6 +196,8 @@ def dataio_prep(hparams):
 
 
 if __name__ == "__main__":
+    logging.basicConfig(stream=sys.stderr, level=logging.INFO)
+    logging.info("Starting...")
 
     # This flag enables the inbuilt cudnn auto-tuner
     torch.backends.cudnn.benchmark = True
@@ -206,8 +209,22 @@ if __name__ == "__main__":
     sb.utils.distributed.ddp_init_group(run_opts)
 
     # Load hyperparameters file with command-line overrides
+    hparams_file, run_opts, overrides = sb.parse_arguments(sys.argv[1:])
+
     with open(hparams_file) as fin:
-        hparams = load_hyperpyyaml(fin, overrides)
+        hparam_str = fin.read()
+
+    if 'yaml' in run_opts:
+        for yaml_file in run_opts['yaml'][0]:
+            logging.info(f"Loading additional yaml file: {yaml_file}")
+            with open(yaml_file) as fin:
+                hparam_str = hparam_str + "\n" + fin.read();
+
+    hparams = load_hyperpyyaml(hparam_str, overrides)
+
+    logging.info(f"Params: {hparams}")
+
+    sys.exit("Stop, its hammer time!")
 
     # Dataset IO prep: creating Dataset objects and proper encodings for phones
     train_data, valid_data, label_encoder = dataio_prep(hparams)

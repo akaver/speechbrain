@@ -3,6 +3,7 @@ seed: 1986
 __set_seed: !apply:torch.manual_seed [!ref <seed>]
 
 output_folder: !ref /data/results/ecapa_tdnn/<seed>
+save_folder: !ref <output_folder>/save
 
 # generated data splits, checkpoints, etc
 data_folder: /data/voxdata
@@ -45,7 +46,7 @@ enrol_data: !ref <data_folder>/enrol.csv
 test_data: !ref <data_folder>/test.csv
 
 # Folder to extract data augmentation files
-rir_folder: !ref /data/rir # Change it if needed
+rir_folder: !ref /data/rirs_noises
 
 # Feature parameters
 n_mels: 80
