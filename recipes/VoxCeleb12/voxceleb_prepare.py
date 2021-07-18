@@ -4,6 +4,9 @@ Read README.md first for download and conversion instructions
 Data preparation.
 """
 
+import sys
+sys.path.insert(0, '/opt/project')
+
 import os
 import csv
 import logging
