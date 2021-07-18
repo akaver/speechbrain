@@ -4,23 +4,14 @@
 #          Mirco Ravanelli 2020
 # ################################
 
-seed: 1986
-__set_seed: !apply:torch.manual_seed [!ref <seed>]
-
 # Folders and train_log file
-voxceleb_source: /data/voxceleb1
-data_folder: /data/voxceleb1
-output_folder: /data/results/ecapa_augment
-save_folder: /data/voxdata
+# voxceleb_source: /data/voxceleb1
+# data_folder: /data/voxceleb1
+# output_folder: /data/results/ecapa_augment
+# save_folder: /data/voxdata
+
 device: 'cuda:0'
 
-# Use the following links for the official voxceleb splits:
-# VoxCeleb1 (cleaned): https://www.robots.ox.ac.uk/~vgg/data/voxceleb/meta/veri_test2.txt
-# VoxCeleb1-H (cleaned): https://www.robots.ox.ac.uk/~vgg/data/voxceleb/meta/list_test_hard2.txt
-# VoxCeleb1-E (cleaned): https://www.robots.ox.ac.uk/~vgg/data/voxceleb/meta/list_test_all2.txt.
-# VoxCeleb1-E and VoxCeleb1-H lists are drawn from the VoxCeleb1 training set.
-# Therefore you cannot use any files in VoxCeleb1 for training if you are using these lists for testing.
-verification_file: /data/voxceleb1/list_test_all2.txt
 
 # Here, the pretrained embedding model trained with train_speaker_embeddings.py hparams/train_ecapa_tdnn.yaml
 # is downloaded from the speechbrain HuggingFace repository.
@@ -29,20 +20,15 @@ verification_file: /data/voxceleb1/list_test_all2.txt
 pretrain_path: /data/voxdata/CKPT+2021-07-10+17-56-18+00
 
 # csv files
-train_data: !ref <save_folder>/train.csv
-enrol_data: !ref <save_folder>/enrol.csv
-test_data: !ref <save_folder>/test.csv
+# train_data: !ref <save_folder>/train.csv
+# enrol_data: !ref <save_folder>/enrol.csv
+# test_data: !ref <save_folder>/test.csv
 
 batch_size: 16
 score_norm: 's-norm' # z-norm t-norm s-norm none
 cohort_size: 20000 # amount of imposter utterances in normalization cohort
 n_train_snts: 400000 # used for normalization stats
 
-# Feature parameters
-n_mels: 80
-left_frames: 0
-right_frames: 0
-deltas: False
 
 # Dataloader options
 train_dataloader_opts:

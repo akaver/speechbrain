@@ -33,7 +33,8 @@ def prepare_voxceleb(
         data_folder_voxceleb1,
         data_folder_voxceleb2,
         save_folder,
-        test_pairs_file=None,
+        test_pairs_in_file=None,
+        test_pairs_out_file=None,
         splits=["train", "dev", "test"],
         split_ratio=90,
         seg_dur=3.0,
@@ -47,7 +48,7 @@ def prepare_voxceleb(
         test_csv ="test.csv",
         file_info="file_info.pkl",
         speaker_quantity=None,
-        verification_quantity=None
+        test_pairs_quantity=None
 ):
     """
     Prepares the csv files for the Voxceleb1 or Voxceleb2 datasets.
@@ -113,7 +114,7 @@ def prepare_voxceleb(
 
     # Split data into train and validation (verification split)
     wav_lst_train, wav_lst_dev = _get_utterance_split_lists(
-        data_folder_voxceleb1, data_folder_voxceleb2, save_file_info, split_ratio, test_pairs_file,
+        data_folder_voxceleb1, data_folder_voxceleb2, save_file_info, split_ratio, test_pairs_in_file,
         speaker_quantity=speaker_quantity
     )
 
@@ -128,8 +129,9 @@ def prepare_voxceleb(
 
     if "test" in splits:
         prepare_csv_enrol_test(
-            data_folder_voxceleb1, data_folder_voxceleb2, save_folder, test_pairs_file, enrol_csv, test_csv,
-            verification_quantity=verification_quantity
+            data_folder_voxceleb1, data_folder_voxceleb2, save_folder, test_pairs_in_file, test_pairs_out_file,
+            enrol_csv, test_csv,
+            test_pairs_quantity=test_pairs_quantity
         )
 
     # Saving options (useful to skip this phase when already done)
@@ -322,7 +324,10 @@ def prepare_csv(seg_dur, wav_lst, csv_file, random_segment=False, amp_th=0):
     _write_csv_file(csv_file, csv_output)
 
 
-def prepare_csv_enrol_test(data_folder_voxceleb1, data_folder_voxceleb2, save_folder, test_lst_file, save_enrol_csv, save_test_csv, verification_quantity=None):
+def prepare_csv_enrol_test(
+        data_folder_voxceleb1, data_folder_voxceleb2, save_folder,
+        test_pairs_in_file, test_pairs_out_file,
+        save_enrol_csv, save_test_csv, test_pairs_quantity=None):
     """
     Creates the csv file for test data (useful for verification)
 
@@ -346,6 +351,18 @@ def prepare_csv_enrol_test(data_folder_voxceleb1, data_folder_voxceleb2, save_fo
         data_folder_voxceleb2 + '/dev/', data_folder_voxceleb2 + '/test/'
     ]
 
+    with open(test_pairs_in_file) as fin:
+        test_pairs_lines = fin.readlines()
+        logger.info(f"Initial test pairs {len(test_pairs_lines)}")
+
+    if test_pairs_quantity is not None and test_pairs_quantity < len(test_pairs_lines):
+        test_pairs_lines = random.sample(test_pairs_lines, test_pairs_quantity)
+
+    with open(test_pairs_out_file, "w") as output:
+        output.writelines(test_pairs_lines)
+
+    logger.info(f"Final test pairs {len(test_pairs_lines)}")
+
     csv_output_head = [
         ["ID", "duration", "wav", "start", "stop", "spk_id"]
     ]  # noqa E231
@@ -353,14 +370,9 @@ def prepare_csv_enrol_test(data_folder_voxceleb1, data_folder_voxceleb2, save_fo
     # extract all the enrol and test ids
     enrol_ids, test_ids = [], []
 
-    with open(test_lst_file) as fin:
-        lines = fin.readlines()
-        print(len(lines))
-
-    sys.exit(0)
 
     # Get unique ids (enrol and test utterances)
-    for line in tqdm(open(test_lst_file)):
+    for line in tqdm(test_pairs_lines):
         splits=line.split(" ")
         e_id = splits[1].rstrip().split(".")[0].strip()
         t_id = splits[2].rstrip().split(".")[0].strip()
@@ -487,14 +499,14 @@ def main():
         hparams['data_folder_voxceleb1'], hparams['data_folder_voxceleb2'],
         hparams['data_folder'],
 
-        test_pairs_in_file=hparams['verification_file'],
-        test_pairs_out_file=hparams['verification_file'],
+        test_pairs_in_file=hparams['test_pairs_in_file'],
+        test_pairs_out_file=hparams['test_pairs_out_file'],
 
         train_csv=hparams['train_data'], valid_csv= hparams['valid_data'],
         enrol_csv= hparams['enrol_data'], test_csv= hparams['test_data'],
 
         splits=splits, split_ratio=hparams['split_ratio'],
-        speaker_quantity=hparams['speaker_quantity'], verification_quantity=hparams['verification_quantity'],
+        speaker_quantity=hparams['speaker_quantity'], test_pairs_quantity=hparams['test_pairs_quantity'],
     )
 
 

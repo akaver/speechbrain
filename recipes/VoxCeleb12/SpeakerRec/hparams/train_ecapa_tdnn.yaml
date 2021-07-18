@@ -7,18 +7,6 @@
 
 train_log: !ref <output_folder>/train_log.txt
 
-
-# Folder to extract data augmentation files
-rir_folder: !ref <data_folder> # Change it if needed
-
-# Use the following links for the official voxceleb splits:
-# VoxCeleb1 (cleaned): https://www.robots.ox.ac.uk/~vgg/data/voxceleb/meta/veri_test2.txt
-# VoxCeleb1-H (cleaned): https://www.robots.ox.ac.uk/~vgg/data/voxceleb/meta/list_test_hard2.txt
-# VoxCeleb1-E (cleaned): https://www.robots.ox.ac.uk/~vgg/data/voxceleb/meta/list_test_all2.txt.
-# VoxCeleb1-E and VoxCeleb1-H lists are drawn from the VoxCeleb1 training set.
-# Therefore you cannot use any files in VoxCeleb1 for training if you are using these lists for testing.
-verification_file: /data/voxceleb1/veri_test2.txt
-
 skip_prep: True
 ckpt_interval_minutes: 15 # save checkpoint every N min
 
@@ -35,12 +23,6 @@ sample_rate: 16000
 sentence_len: 3.0 # seconds
 shuffle: True
 random_chunk: True
-
-# Feature parameters
-n_mels: 80
-left_frames: 0
-right_frames: 0
-deltas: False
 
 # Number of speakers
 out_n_neurons: 6112 #1211 for vox1  # 5994 for vox2, 7205 for vox1+vox2

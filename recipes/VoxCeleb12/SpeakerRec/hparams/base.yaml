@@ -19,9 +19,11 @@ data_folder_voxceleb2: /data/voxceleb2
 # Therefore you cannot use any files in VoxCeleb1 for training if you are using these lists for testing.
 # voxceleb_prepare takes care of this automatically.
 
-verification_input_file: /data/voxceleb1/list_test_all2.txt
+test_pairs_in_file: /data/voxceleb1/list_test_all2.txt
 # random verification pairs to use from input file. remove/set to None for full
-verification_quantity: 1000
+test_pairs_quantity: 1000
+test_pairs_out_file: !ref <data_folder>/test.txt
+
 verification_file: !ref <data_folder>/test.txt
 
 
@@ -29,7 +31,7 @@ verification_file: !ref <data_folder>/test.txt
 # data is gathered by scanning voxceleb 1 and 2 directories
 
 # random unique speakers to select from whole dataset
-speaker_quantity: 10
+speaker_quantity: 8
 
 train_data: !ref <data_folder>/train.csv
 valid_data: !ref <data_folder>/valid.csv
@@ -42,4 +44,11 @@ split_ratio: 90
 enrol_data: !ref <data_folder>/enrol.csv
 test_data: !ref <data_folder>/test.csv
 
+# Folder to extract data augmentation files
+rir_folder: !ref /data/rir # Change it if needed
 
+# Feature parameters
+n_mels: 80
+left_frames: 0
+right_frames: 0
+deltas: False

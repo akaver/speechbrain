@@ -1,5 +1,9 @@
 #!/usr/bin/python3
-"""Recipe for training speaker embeddings (e.g, xvectors) using the VoxCeleb Dataset.
+"""
+tmux in background
+https://askubuntu.com/questions/8653/how-to-keep-processes-running-after-ending-ssh-session
+
+Recipe for training speaker embeddings (e.g, xvectors) using the VoxCeleb Dataset.
 We employ an encoder followed by a speaker classifier.
 
 To run this recipe, use the following command:
