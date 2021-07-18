@@ -1,0 +1,4 @@
+speaker_quantity: 20
+test_pairs_quantity: 2000
+number_of_epochs: 2
+batch_size: 6

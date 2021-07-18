@@ -10,23 +10,19 @@ train_log: !ref <output_folder>/train_log.txt
 skip_prep: True
 ckpt_interval_minutes: 15 # save checkpoint every N min
 
-# Training parameters
-number_of_epochs: 10
 # 32
 # 8 for 8gb RTX2080
-batch_size: 300
 lr: 0.001
 base_lr: 0.00000001
 max_lr: !ref <lr>
 step_size: 65000
-sample_rate: 16000
-sentence_len: 3.0 # seconds
+
 shuffle: True
 random_chunk: True
 
 # Number of speakers
 # should be autodetected
-out_n_neurons: 6112 #1211 for vox1  # 5994 for vox2, 7205 for vox1+vox2
+out_n_neurons: !ref <speaker_quantity> #1211 for vox1  # 5994 for vox2, 7205 for vox1+vox2
 
 dataloader_options:
     batch_size: !ref <batch_size>

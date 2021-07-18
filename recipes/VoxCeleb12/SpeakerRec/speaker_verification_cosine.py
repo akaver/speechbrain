@@ -42,10 +42,10 @@ def compute_embedding(wavs, wav_lens):
         in the length (e.g., [0.8 0.6 1.0])
     """
     with torch.no_grad():
-        feats = params["compute_features"](wavs)
-        feats = params["mean_var_norm"](feats, wav_lens)
-        embeddings = params["embedding_model"](feats, wav_lens)
-        embeddings = params["mean_var_norm_emb"](
+        feats = hparams["compute_features"](wavs)
+        feats = hparams["mean_var_norm"](feats, wav_lens)
+        embeddings = hparams["embedding_model"](feats, wav_lens)
+        embeddings = hparams["mean_var_norm_emb"](
             embeddings, torch.ones(embeddings.shape[0]).to(embeddings.device)
         )
     return embeddings.squeeze(1)
@@ -59,7 +59,7 @@ def compute_embedding_loop(data_loader):
 
     with torch.no_grad():
         for batch in tqdm(data_loader, dynamic_ncols=True):
-            batch = batch.to(params["device"])
+            batch = batch.to(hparams["device"])
             seg_ids = batch.id
             wavs, lens = batch.sig
 
@@ -69,7 +69,7 @@ def compute_embedding_loop(data_loader):
                     found = True
             if not found:
                 continue
-            wavs, lens = wavs.to(params["device"]), lens.to(params["device"])
+            wavs, lens = wavs.to(hparams["device"]), lens.to(hparams["device"])
             emb = compute_embedding(wavs, lens).unsqueeze(1)
             for i, seg_id in enumerate(seg_ids):
                 embedding_dict[seg_id] = emb[i].detach().clone()
@@ -83,14 +83,14 @@ def get_verification_scores(veri_test):
     positive_scores = []
     negative_scores = []
 
-    save_file = os.path.join(params["output_folder"], "scores.txt")
+    save_file = os.path.join(hparams["output_folder"], "scores.txt")
     s_file = open(save_file, "w")
 
     # Cosine similarity initialization
     similarity = torch.nn.CosineSimilarity(dim=-1, eps=1e-6)
 
     # creating cohort for score normalization
-    if "score_norm" in params:
+    if "score_norm" in hparams:
         train_cohort = torch.stack(list(train_dict.values()))
 
     for i, line in enumerate(tqdm(veri_test)):
@@ -104,14 +104,14 @@ def get_verification_scores(veri_test):
         enrol = enrol_dict[enrol_id]
         test = test_dict[test_id]
 
-        if "score_norm" in params:
+        if "score_norm" in hparams:
             # Getting norm stats for enrol impostors
             enrol_rep = enrol.repeat(train_cohort.shape[0], 1, 1)
             score_e_c = similarity(enrol_rep, train_cohort)
 
-            if "cohort_size" in params:
+            if "cohort_size" in hparams:
                 score_e_c = torch.topk(
-                    score_e_c, k=params["cohort_size"], dim=0
+                    score_e_c, k=hparams["cohort_size"], dim=0
                 )[0]
 
             mean_e_c = torch.mean(score_e_c, dim=0)
@@ -121,9 +121,9 @@ def get_verification_scores(veri_test):
             test_rep = test.repeat(train_cohort.shape[0], 1, 1)
             score_t_c = similarity(test_rep, train_cohort)
 
-            if "cohort_size" in params:
+            if "cohort_size" in hparams:
                 score_t_c = torch.topk(
-                    score_t_c, k=params["cohort_size"], dim=0
+                    score_t_c, k=hparams["cohort_size"], dim=0
                 )[0]
 
             mean_t_c = torch.mean(score_t_c, dim=0)
@@ -133,12 +133,12 @@ def get_verification_scores(veri_test):
         score = similarity(enrol, test)[0]
 
         # Perform score normalization
-        if "score_norm" in params:
-            if params["score_norm"] == "z-norm":
+        if "score_norm" in hparams:
+            if hparams["score_norm"] == "z-norm":
                 score = (score - mean_e_c) / std_e_c
-            elif params["score_norm"] == "t-norm":
+            elif hparams["score_norm"] == "t-norm":
                 score = (score - mean_t_c) / std_t_c
-            elif params["score_norm"] == "s-norm":
+            elif hparams["score_norm"] == "s-norm":
                 score_e = (score - mean_e_c) / std_e_c
                 score_t = (score - mean_t_c) / std_t_c
                 score = 0.5 * (score_e + score_t)
@@ -223,42 +223,56 @@ if __name__ == "__main__":
     current_dir = os.path.dirname(os.path.abspath(__file__))
     sys.path.append(os.path.dirname(current_dir))
 
-    # Load hyperparameters file with command-line overrides
-    params_file, run_opts, overrides = sb.core.parse_arguments(sys.argv[1:])
-    with open(params_file) as fin:
-        params = load_hyperpyyaml(fin, overrides)
+    # CLI:
+    hparams_file, run_opts, overrides = sb.parse_arguments(sys.argv[1:])
+
+    # Initialize ddp (useful only for multi-GPU DDP training)
+    sb.utils.distributed.ddp_init_group(run_opts)
+
+    with open(hparams_file) as fin:
+        hparam_str = fin.read()
+
+    if 'yaml' in run_opts:
+        for yaml_file in run_opts['yaml']:
+            logging.info(f"Loading additional yaml file: {yaml_file[0]}")
+            with open(yaml_file[0]) as fin:
+                hparam_str = hparam_str + "\n" + fin.read();
+
+    hparams = load_hyperpyyaml(hparam_str, overrides)
+
+    logging.info(f"Params: {hparams}")
 
     # Download verification list (to exlude verification sentences from train)
     veri_file_path = os.path.join(
-        params["save_folder"], os.path.basename(params["verification_file"])
+        hparams["save_folder"], os.path.basename(hparams["verification_file"])
     )
-    download_file(params["verification_file"], veri_file_path)
+    download_file(hparams["verification_file"], veri_file_path)
 
     from voxceleb_prepare import prepare_voxceleb  # noqa E402
 
     # Create experiment directory
     sb.core.create_experiment_directory(
-        experiment_directory=params["output_folder"],
-        hyperparams_to_save=params_file,
+        experiment_directory=hparams["output_folder"],
+        hyperparams_to_save=hparams_file,
         overrides=overrides,
     )
 
     # here we create the datasets objects as well as tokenization and encoding
-    train_dataloader, enrol_dataloader, test_dataloader = dataio_prep(params)
+    train_dataloader, enrol_dataloader, test_dataloader = dataio_prep(hparams)
 
     # We download the pretrained LM from HuggingFace (or elsewhere depending on
     # the path given in the YAML file). The tokenizer is loaded at the same time.
-    run_on_main(params["pretrainer"].collect_files)
-    params["pretrainer"].load_collected(params["device"])
-    params["embedding_model"].eval()
-    params["embedding_model"].to(params["device"])
+    run_on_main(hparams["pretrainer"].collect_files)
+    hparams["pretrainer"].load_collected(hparams["device"])
+    hparams["embedding_model"].eval()
+    hparams["embedding_model"].to(hparams["device"])
 
     # Computing  enrollment and test embeddings
     logger.info("Computing enroll/test embeddings...")
 
-    save_enrol_dict = params["save_folder"] + "/enrol_dict.pkl"
-    save_test_dict = params["save_folder"] + "/test_dict.pkl"
-    save_train_dict = params["save_folder"] + "/train_dict.pkl"
+    save_enrol_dict = hparams["save_folder"] + "/enrol_dict.pkl"
+    save_test_dict = hparams["save_folder"] + "/test_dict.pkl"
+    save_train_dict = hparams["save_folder"] + "/train_dict.pkl"
     enrol_dict = {}
     test_dict = {}
     train_dict = {}
@@ -283,7 +297,7 @@ if __name__ == "__main__":
         logger.info("Loading test_dict")
         test_dict = load_pkl(save_test_dict)
 
-    if "score_norm" in params:
+    if "score_norm" in hparams:
         if not os.path.exists(save_train_dict):
             train_dict = compute_embedding_loop(train_dataloader)
             logger.info("Saving train_dict")

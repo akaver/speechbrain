@@ -21,18 +21,18 @@ data_folder_voxceleb2: /data/voxceleb2
 # voxceleb_prepare takes care of this automatically.
 
 test_pairs_in_file: /data/voxceleb1/list_test_all2.txt
-# random verification pairs to use from input file. remove/set to None for full
-test_pairs_quantity: 1000
-test_pairs_out_file: !ref <data_folder>/test.txt
+# random verification pairs to use from input file. Remove/set to None for full
+# test_pairs_quantity: 1000
+test_pairs_out_file: !ref <data_folder>/verification.txt
 
-verification_file: !ref <data_folder>/test.txt
+verification_file: !ref <data_folder>/verification.txt
 
 
 # Data files - no speakers from verification files will be included
 # data is gathered by scanning voxceleb 1 and 2 directories
 
-# random unique speakers to select from whole dataset
-speaker_quantity: 8
+# random unique speakers to select from whole dataset. Remove/set to None for full
+# speaker_quantity: 8
 
 train_data: !ref <data_folder>/train.csv
 valid_data: !ref <data_folder>/valid.csv
@@ -53,3 +53,6 @@ n_mels: 80
 left_frames: 0
 right_frames: 0
 deltas: False
+
+sample_rate: 16000
+sentence_len: 3.0 # seconds

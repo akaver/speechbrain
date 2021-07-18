@@ -471,9 +471,6 @@ def main():
 
     logging.info(f"Command line args: {sys.argv[1:]}")
 
-    hparams_file, run_opts, overrides = sb.parse_arguments(sys.argv[1:])
-
-
     # Load hyperparameters file with command-line overrides
     hparams_file, run_opts, overrides = sb.parse_arguments(sys.argv[1:])
 
@@ -506,6 +503,13 @@ def main():
         splits=splits, split_ratio=hparams['split_ratio'],
         speaker_quantity=hparams['speaker_quantity'], test_pairs_quantity=hparams['test_pairs_quantity'],
     )
+
+    # TODO remove file
+    lab_enc_file = os.path.join(hparams["data_folder"], "label_encoder.txt")
+    if os.path.exists(lab_enc_file):
+        logger.info(f"Deleting {lab_enc_file}")
+        os.remove(lab_enc_file)
+
 
 
 if __name__ == "__main__":

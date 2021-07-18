@@ -54,10 +54,10 @@ class SpeakerBrain(sb.core.Brain):
 
                 # Managing speed change
                 if wavs_aug.shape[1] > wavs.shape[1]:
-                    wavs_aug = wavs_aug[:, 0 : wavs.shape[1]]
+                    wavs_aug = wavs_aug[:, 0: wavs.shape[1]]
                 else:
                     zero_sig = torch.zeros_like(wavs)
-                    zero_sig[:, 0 : wavs_aug.shape[1]] = wavs_aug
+                    zero_sig[:, 0: wavs_aug.shape[1]] = wavs_aug
                     wavs_aug = zero_sig
 
                 if self.hparams.concat_augment:
@@ -138,12 +138,12 @@ def dataio_prep(hparams):
 
     # 1. Declarations:
     train_data = sb.dataio.dataset.DynamicItemDataset.from_csv(
-        csv_path=hparams["train_annotation"],
+        csv_path=hparams["train_data"],
         replacements={"data_root": data_folder},
     )
 
     valid_data = sb.dataio.dataset.DynamicItemDataset.from_csv(
-        csv_path=hparams["valid_annotation"],
+        csv_path=hparams["valid_data"],
         replacements={"data_root": data_folder},
     )
 
@@ -184,7 +184,7 @@ def dataio_prep(hparams):
 
     # 3. Fit encoder:
     # Load or compute the label encoder (with multi-GPU DDP support)
-    lab_enc_file = os.path.join(hparams["save_folder"], "label_encoder.txt")
+    lab_enc_file = os.path.join(hparams["data_folder"], "label_encoder.txt")
     label_encoder.load_or_create(
         path=lab_enc_file, from_didatasets=[train_data], output_key="spk_id",
     )
@@ -208,23 +208,18 @@ if __name__ == "__main__":
     # Initialize ddp (useful only for multi-GPU DDP training)
     sb.utils.distributed.ddp_init_group(run_opts)
 
-    # Load hyperparameters file with command-line overrides
-    hparams_file, run_opts, overrides = sb.parse_arguments(sys.argv[1:])
-
     with open(hparams_file) as fin:
         hparam_str = fin.read()
 
     if 'yaml' in run_opts:
-        for yaml_file in run_opts['yaml'][0]:
-            logging.info(f"Loading additional yaml file: {yaml_file}")
-            with open(yaml_file) as fin:
+        for yaml_file in run_opts['yaml']:
+            logging.info(f"Loading additional yaml file: {yaml_file[0]}")
+            with open(yaml_file[0]) as fin:
                 hparam_str = hparam_str + "\n" + fin.read();
 
     hparams = load_hyperpyyaml(hparam_str, overrides)
 
     logging.info(f"Params: {hparams}")
-
-    sys.exit("Stop, its hammer time!")
 
     # Dataset IO prep: creating Dataset objects and proper encodings for phones
     train_data, valid_data, label_encoder = dataio_prep(hparams)
